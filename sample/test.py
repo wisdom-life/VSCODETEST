@@ -7,7 +7,7 @@ import spatialmath as smtb
 import spatialmath.base.transforms3d as sbt3
 import roboticstoolbox as rtb
 from math import pi
-
+from spatialmath import SE3
 
 # 定义DH参数下的XB
 
@@ -16,8 +16,10 @@ robot = rtb.DHRobot(
         rtb.RevoluteMDH(d=0.7161, a=0, alpha=0, offset=0),
         rtb.RevoluteMDH(d=0.43, a=0, alpha= pi/2, offset= pi),
         rtb.RevoluteMDH(d=0.43, a=0, alpha= pi/2, offset= pi/2),
-        rtb.RevoluteMDH(d=0.387, a=2.080, alpha=0, offset=0),
-        rtb.RevoluteMDH(d=0.43, a=2.080, alpha=0, offset= pi/2),
+        rtb.RevoluteMDH(d=0,a=2.080, alpha=0, offset=0,qlim=[0,0]),#增加虚拟关节,
+        rtb.RevoluteMDH(d=0.387, a=0, alpha=0, offset=0),
+        rtb.RevoluteMDH(d=0,a=2.080, alpha=0,offset=0,qlim=[0,0]),#增加虚拟关节
+        rtb.RevoluteMDH(d=0.43, a=0, alpha=0, offset= pi/2),
         rtb.RevoluteMDH(d=0.43, a=0, alpha= pi/2,offset= pi),
         rtb.RevoluteMDH(d=0.7161, a=0, alpha= pi/2, offset= 0.0),
     ],
@@ -54,13 +56,17 @@ Picture1.add(
 
 # robot.plot(q) #可以实现以下功能
 
-robot.q = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+robot.q = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
 
 #from spatialmath.base.transforms3d import *
-T = robot.fkine([0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
+T = robot.fkine([0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
 #trplot(T)
 #sbt3.trplot(T)
-T.plot() #由于矩阵基类对相应的坐标系绘制，其画布的传递关系不明确，需注意该语句的位置。
+
+
+Frame0 = SE3() # 明确基坐标系{0}
+
+Frame0.plot(frame='0', color='green') #由于矩阵基类对相应的坐标系绘制，其画布的传递关系不明确，需注意该语句的位置。
 
 #robot.plot([0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
 

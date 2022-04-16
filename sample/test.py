@@ -8,6 +8,10 @@ import spatialmath.base.transforms3d as sbt3
 import roboticstoolbox as rtb
 from math import pi
 from spatialmath import SE3
+import numpy as np #采用numpy进行计算
+import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
+
 
 # 定义DH参数下的XB
 
@@ -64,11 +68,47 @@ T = robot.fkine([0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
 #sbt3.trplot(T)
 
 
+
 Frame0 = SE3() # 明确基坐标系{0}
 
 Frame0.plot(frame='0', color='green') #由于矩阵基类对相应的坐标系绘制，其画布的传递关系不明确，需注意该语句的位置。
 
 #robot.plot([0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
+
+num_sample = 10000
+
+q_range = np.array([pi,pi,pi,0,pi,0,pi,pi,pi])
+
+rand_q = (np.random.rand(num_sample,9) - 0.5)* 2* q_range
+
+MT = robot.fkine(rand_q) #计算不同的末端位置
+
+# print(MT)
+print(MT[0])
+#print(MT[0].)
+#MT[0].data[1:]
+
+
+m_x = []
+m_y = []
+m_z = []
+
+for item in range(num_sample):
+    m_x.append(MT.data[item][0,3])
+    m_y.append(MT.data[item][1,3])
+    m_z.append(MT.data[item][2,3])
+
+plt.gca().scatter3D(xs=m_x, ys=m_y, zs=m_z)
+
+
+
+# MT.plot()
+
+#plt.gca().scatter3D(xs=MT[0].x, ys=MT[0].y, zs=MT[0].z)
+
+#print(rand_q)
+
+
 
 Picture1._add_teach_panel(robot,robot.q)
   

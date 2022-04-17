@@ -3,6 +3,8 @@
 正运动学的计算及图示、逆运动学的计算结果、运动轨迹的显示。
 """
 
+from ctypes.wintypes import tagRECT
+from sre_constants import SUCCESS
 import spatialmath as smtb
 import spatialmath.base.transforms3d as sbt3
 import roboticstoolbox as rtb
@@ -11,21 +13,22 @@ from spatialmath import SE3
 import numpy as np #采用numpy进行计算
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
+from sympy import limit, limit_seq
 
 
 # 定义DH参数下的XB
 
 robot = rtb.DHRobot(
     [
-        rtb.RevoluteMDH(d=0.7161, a=0, alpha=0, offset=0),
-        rtb.RevoluteMDH(d=0.43, a=0, alpha= pi/2, offset= pi),
-        rtb.RevoluteMDH(d=0.43, a=0, alpha= pi/2, offset= pi/2),
+        rtb.RevoluteMDH(d=0.7161, a=0, alpha=0, offset=0,qlim=[-pi,pi]),
+        rtb.RevoluteMDH(d=0.43, a=0, alpha= pi/2, offset= pi,qlim=[-pi,pi]),
+        rtb.RevoluteMDH(d=0.43, a=0, alpha= pi/2, offset= pi/2,qlim=[-pi,pi]),
         rtb.RevoluteMDH(d=0,a=2.080, alpha=0, offset=0,qlim=[0,0]),#增加虚拟关节,
-        rtb.RevoluteMDH(d=0.387, a=0, alpha=0, offset=0),
+        rtb.RevoluteMDH(d=0.387, a=0, alpha=0, offset=0,qlim=[-pi,pi]),
         rtb.RevoluteMDH(d=0,a=2.080, alpha=0,offset=0,qlim=[0,0]),#增加虚拟关节
-        rtb.RevoluteMDH(d=0.43, a=0, alpha=0, offset= pi/2),
-        rtb.RevoluteMDH(d=0.43, a=0, alpha= pi/2,offset= pi),
-        rtb.RevoluteMDH(d=0.7161, a=0, alpha= pi/2, offset= 0.0),
+        rtb.RevoluteMDH(d=0.43, a=0, alpha=0, offset= pi/2,qlim=[-pi,pi]),
+        rtb.RevoluteMDH(d=0.43, a=0, alpha= pi/2,offset= pi,qlim=[-pi,pi]),
+        rtb.RevoluteMDH(d=0.7161, a=0, alpha= pi/2, offset= 0.0,qlim=[-pi,pi]),
     ],
     name="xb",
 )
@@ -46,7 +49,7 @@ Picture1.add(robot,
 
 '''
 
-Picture1.launch("Teach " + robot.name)
+Picture1.launch(robot.name,limits = None)
 Picture1.add(
     robot,
     readonly=True,
@@ -63,9 +66,10 @@ Picture1.add(
 robot.q = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
 
 #from spatialmath.base.transforms3d import *
-T = robot.fkine([0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
+T0 = robot.fkine([0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
 #trplot(T)
 #sbt3.trplot(T)
+
 
 
 
@@ -75,7 +79,7 @@ Frame0.plot(frame='0', color='green') #由于矩阵基类对相应的坐标系�
 
 #robot.plot([0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
 
-num_sample = 10000
+num_sample = 1
 
 q_range = np.array([pi,pi,pi,0,pi,0,pi,pi,pi])
 
@@ -84,7 +88,7 @@ rand_q = (np.random.rand(num_sample,9) - 0.5)* 2* q_range
 MT = robot.fkine(rand_q) #计算不同的末端位置
 
 # print(MT)
-print(MT[0])
+# print(MT[0])
 #print(MT[0].)
 #MT[0].data[1:]
 
@@ -101,6 +105,17 @@ for item in range(num_sample):
 plt.gca().scatter3D(xs=m_x, ys=m_y, zs=m_z)
 
 
+T_target = SE3(MT.data[0])
+
+
+t = np.arange(0, 2, 0.010)
+
+Ts = rtb.tools.trajectory.ctraj(T0,T_target,len(t))
+
+print(len(Ts))
+
+
+q_inv = robot.ikine_LM(Ts)
 
 # MT.plot()
 
@@ -108,12 +123,28 @@ plt.gca().scatter3D(xs=m_x, ys=m_y, zs=m_z)
 
 #print(rand_q)
 
+#print(q_inv.q)
 
+
+
+robot.q = q_inv.q[0]
 
 Picture1._add_teach_panel(robot,robot.q)
   
+# robot.plot(q_inv.q)
 
-Picture1.step()
+# env = robot._get_graphical_backend() 
+
+q = smtb.base.getmatrix(q_inv.q, (None, robot.n))#Convert argument to 2D array
+robot.q = q[0, :]
+
+for qk in q:
+    robot.q = qk
+    Picture1.step()
+
+
+#Picture1.step()
+
 
 
 Picture1.hold()
